@@ -27,5 +27,6 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
+    "sudo-prompt": "^9.2.1"
   }
 }

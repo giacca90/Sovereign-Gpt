@@ -27,6 +27,6 @@ export class AppComponent {
   }
 
   cargaModelo() {
-    
+    this.IPC.send("Install")
   }
 }
