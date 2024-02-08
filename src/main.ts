@@ -56,7 +56,7 @@ function createWindow() {
           } else {
             console.log("Respuesta a sudo apt update:\n" + stdout);
             sudoPrompt.exec(
-              'curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg; sudo echo "deb [signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu lunar stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null',
+              'curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo -y gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg; sudo echo "deb [signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu lunar stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null',
               { name: "SovereignGPT" },
               (error, stdout, stderr) => {
                 if (error) {
@@ -69,13 +69,14 @@ function createWindow() {
                       stdout
                   );
                   sudoPrompt.exec(
-                    "apt update; sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin",
+                    "apt update; sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin; sudo usermod -aG docker $USER",
                     { name: "SovereignGPT" },
                     (error, stdout, stderr) => {
                       if (error) {
                         console.error("Error al instalar Docker: " + error);
                       } else {
                         console.log("Respuesta de instalar Docker:\n" + stdout);
+                        mainWindow.webContents.send("StatusStart", 1);
                       }
                     }
                   );
@@ -88,6 +89,9 @@ function createWindow() {
     }
   });
 
+  ipcMain.on("InstallOllama", (_event) => {
+
+  })
 
 }
 
