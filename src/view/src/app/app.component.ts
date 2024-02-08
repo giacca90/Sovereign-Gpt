@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Component } from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { IpcService } from './services/ipc-service.service';
 
@@ -14,19 +14,25 @@ export class AppComponent {
   docker:boolean = false;
   ollama:boolean = false;
 
-  constructor(public IPC:IpcService) {
+  constructor(public IPC:IpcService, private cdr: ChangeDetectorRef) {
     IPC.send("Start");
     IPC.on("StatusStart", (_event: any, status:number) => {
       if(status === 1) {
         this.docker = true;
+        this.cdr.detectChanges();
       }else if (status === 2) {
         this.docker = true;
         this.ollama = true;
+        this.cdr.detectChanges();
       }
     })
   }
 
-  cargaModelo() {
-    this.IPC.send("Install")
+  InstallDocker() {
+    this.IPC.send("InstallDocker");
+  }
+
+  InstallOllama() {
+    this.IPC.send("InstallOllama");
   }
 }

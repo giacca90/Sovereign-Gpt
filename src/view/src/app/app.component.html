@@ -1,4 +1,7 @@
 @if(docker === false && ollama === false) {
+  <h3>Docker no está instalado en este equipo!!</h3>
+  <button type="submit" (click)="InstallDocker()">Instala Docker</button>
+}@else if (docker === true && ollama === false) {
   <h3>No se ha encontrado ningún modelo instalado en esta maquina!!</h3>
-  <button type="submit" (click)="cargaModelo()">Carga el Modelo</button>
+  <button type="submit" (click)="InstallOllama()">Instalar Modelo</button>
 }
