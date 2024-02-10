@@ -3,8 +3,10 @@
 import { app, BrowserWindow, screen, Menu, ipcMain } from "electron";
 import * as path from "path";
 import * as os from "os";
-import { exec } from "child_process";
+import { exec, spawn } from "child_process";
 import * as sudoPrompt from "sudo-prompt";
+
+type StdioOptions = 'inherit' | 'pipe' | 'ignore';
 
 function createWindow() {
   // Create the browser window.
@@ -90,9 +92,49 @@ function createWindow() {
   });
 
   ipcMain.on("InstallOllama", (_event) => {
-
+    const options: { stdio: StdioOptions[] } = {
+      stdio: ['inherit', 'inherit', 'pipe'],
+    };
+  
+    spawn('docker', ['run', '-d', '-v', 'ollama:/root/.ollama', '-p', '11434:11434', '--name', 'ollama', 'ollama/ollama'], options)
+      .on('exit', (code) => {
+        if (code !== 0) {
+          console.error(`Error al instalar Ollama en fase 1: código de salida ${code}`);
+          return;
+        }
+  
+        spawn('docker', ['exec', '-it', 'ollama', 'ollama', 'run', 'llama2'], options)
+          .on('exit', (code) => {
+            if (code !== 0) {
+              console.error(`Error al instalar Ollama en fase 2: código de salida ${code}`);
+              return;
+            }
+            console.log("Resultado install el modelo:");
+            mainWindow.webContents.send("StatusStart", 2);
+          });
+      });
+  });
+  /* ipcMain.on("InstallOllama", (_event) => {
+    exec("docker run -d -v ollama:/root/.ollama -p 11434:11434 --name ollama ollama/ollama", (error, stdout, stderr) =>  {
+      if (error) {
+        console.error(`Error al instalar Ollama en fase 1: ${error}`);
+//        return;
+      }
+      console.log("Resultado install Ollama:");
+      console.log(stdout);
+      exec("docker exec -it ollama ollama run llama2",(error, stdout, stderr) => {
+        if (error) {
+          console.error(`Error al instalar Ollama en fase 2: ${error}`);
+  //        return;
+        }
+        console.log("Resultado install el modelo:");
+        console.log(stdout);
+        mainWindow.webContents.send("StatusStart", 2);
+      });
+//      
+    })
   })
-
+ */
 }
 
 // This method will be called when Electron has finished
