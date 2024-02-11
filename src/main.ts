@@ -7,6 +7,9 @@ import { exec, spawn } from "child_process";
 import * as sudoPrompt from "sudo-prompt";
 
 type StdioOptions = 'inherit' | 'pipe' | 'ignore';
+const options: { stdio: StdioOptions[] } = {
+  stdio: ['inherit', 'inherit', 'pipe'],
+};
 
 function createWindow() {
   // Create the browser window.
@@ -40,6 +43,26 @@ function createWindow() {
       console.log("Resultado docker --version:");
       console.log(stdout);
       mainWindow.webContents.send("StatusStart", 1);
+      exec("docker ps -a", (error, stdout, stderr) => {
+        if (error) {
+          console.error(`Error en la ejecución del comando docker ps -a: ${error}`);
+          return;
+        }
+        console.log("Resultado docker ps -a:");
+        console.log(stdout);
+        if(stdout.includes("ollama")) {
+          mainWindow.webContents.send("StatusStart", 2);
+          exec("docker start ollama", (error, stdout, stderr) => {
+            if (error) {
+              console.error(`Error en la ejecución del comando docker start ollama: ${error}`);
+              return;
+            }
+            console.log("Resultado docker start ollama:");
+            console.log(stdout);
+
+          })
+        }
+      })
     });
   });
 
@@ -92,10 +115,6 @@ function createWindow() {
   });
 
   ipcMain.on("InstallOllama", (_event) => {
-    const options: { stdio: StdioOptions[] } = {
-      stdio: ['inherit', 'inherit', 'pipe'],
-    };
-  
     spawn('docker', ['run', '-d', '-v', 'ollama:/root/.ollama', '-p', '11434:11434', '--name', 'ollama', 'ollama/ollama'], options)
       .on('exit', (code) => {
         if (code !== 0) {
@@ -114,27 +133,6 @@ function createWindow() {
           });
       });
   });
-  /* ipcMain.on("InstallOllama", (_event) => {
-    exec("docker run -d -v ollama:/root/.ollama -p 11434:11434 --name ollama ollama/ollama", (error, stdout, stderr) =>  {
-      if (error) {
-        console.error(`Error al instalar Ollama en fase 1: ${error}`);
-//        return;
-      }
-      console.log("Resultado install Ollama:");
-      console.log(stdout);
-      exec("docker exec -it ollama ollama run llama2",(error, stdout, stderr) => {
-        if (error) {
-          console.error(`Error al instalar Ollama en fase 2: ${error}`);
-  //        return;
-        }
-        console.log("Resultado install el modelo:");
-        console.log(stdout);
-        mainWindow.webContents.send("StatusStart", 2);
-      });
-//      
-    })
-  })
- */
 }
 
 // This method will be called when Electron has finished
