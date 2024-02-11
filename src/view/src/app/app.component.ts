@@ -11,20 +11,14 @@ import { IpcService } from './services/ipc-service.service';
   styleUrl: './app.component.css'
 })
 export class AppComponent {
-  docker:boolean = false;
-  ollama:boolean = false;
+  
+  status:number = 0;
 
   constructor(public IPC:IpcService, private cdr: ChangeDetectorRef) {
     IPC.send("Start");
     IPC.on("StatusStart", (_event: any, status:number) => {
-      if(status === 1) {
-        this.docker = true;
-        this.cdr.detectChanges();
-      }else if (status === 2) {
-        this.docker = true;
-        this.ollama = true;
-        this.cdr.detectChanges();
-      }
+      this.status = status;
+      this.cdr.detectChanges();
     })
   }
 
