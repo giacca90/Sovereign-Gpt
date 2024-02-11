@@ -59,7 +59,16 @@ function createWindow() {
             }
             console.log("Resultado docker start ollama:");
             console.log(stdout);
-
+            exec("docker exec ollama ollama run llama2", (error, stdout, stderr) => {
+              if (error) {
+              console.error(`Error en la ejecución del comando docker exec ollama ollama run llama2: ${error}`);
+              return;
+              }
+              console.log("Resultado docker exec ollama ollama run llama2:");
+              console.log(stdout);
+              mainWindow.webContents.send("StatusStart", 3);
+//            curl http://localhost:11434/api/generate -d '{"model": "llama2", "prompt": "cual es la capital de España??", "stream": false}'  
+            })
           })
         }
       })
@@ -115,14 +124,33 @@ function createWindow() {
   });
 
   ipcMain.on("InstallOllama", (_event) => {
-    spawn('docker', ['run', '-d', '-v', 'ollama:/root/.ollama', '-p', '11434:11434', '--name', 'ollama', 'ollama/ollama'], options)
+    exec("docker run -d -v ollama:/root/.ollama -p 11434:11434 --name ollama ollama/ollama", (error, stdout, stderr) => {
+      if (error) {
+        console.error(`Error en la ejecución del comando docker run -d -v ollama:/root/.ollama -p 11434:11434 --name ollama ollama/ollama: ${error}`);
+        return;
+      }
+      console.log("Resultado docker run -d -v ollama:/root/.ollama -p 11434:11434 --name ollama ollama/ollama:");
+      console.log(stdout);
+      mainWindow.webContents.send("StatusStart", 2);
+      exec("docker exec ollama ollama run llama2", (error, stdout, stderr) => {
+        if (error) {
+          console.error(`Error en la ejecución del comando docker exec ollama ollama run llama2: ${error}`);
+          return;
+        }
+        console.log("Resultado docker exec ollama ollama run llama2:");
+        console.log(stdout);
+        mainWindow.webContents.send("StatusStart", 3);
+//         curl http://localhost:11434/api/generate -d '{"model": "llama2", "prompt": "cual es la capital de España??", "stream": false}'  
+      })
+    })
+    /* spawn('docker', ['run', '-d', '-v', 'ollama:/root/.ollama', '-p', '11434:11434', '--name', 'ollama', 'ollama/ollama'], options)
       .on('exit', (code) => {
         if (code !== 0) {
           console.error(`Error al instalar Ollama en fase 1: código de salida ${code}`);
           return;
-        }
+        } */
   
-        spawn('docker', ['exec', '-it', 'ollama', 'ollama', 'run', 'llama2'], options)
+        /* spawn('docker', ['exec', '-it', 'ollama', 'ollama', 'run', 'llama2'], options)
           .on('exit', (code) => {
             if (code !== 0) {
               console.error(`Error al instalar Ollama en fase 2: código de salida ${code}`);
@@ -131,7 +159,7 @@ function createWindow() {
             console.log("Resultado install el modelo:");
             mainWindow.webContents.send("StatusStart", 2);
           });
-      });
+      }) */;
   });
 }
 
