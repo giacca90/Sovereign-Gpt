@@ -27,6 +27,7 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
+    "child_process": "^1.0.2",
     "node-pty": "^1.0.0",
     "sudo-prompt": "^9.2.1"
   }

@@ -124,7 +124,42 @@ function createWindow() {
   });
 
   ipcMain.on("InstallOllama", (_event) => {
-    exec("docker run -d -v ollama:/root/.ollama -p 11434:11434 --name ollama ollama/ollama", (error, stdout, stderr) => {
+    const spa = spawn('docker', ['run', '-d', '-v', 'ollama:/root/.ollama', '-p', '11434:11434', '--name', 'ollama', 'ollama/ollama']);
+    spa.stdout.on('data', (data) => {
+      console.log(data.toString());
+    });
+    spa.stderr.on('data', (data) => {
+      console.error(data.toString());
+    });
+    spa.on('exit', (code) => {
+      if (code === 0) {
+        console.log('El contenedor Docker se ejecutó correctamente.');
+      } else {
+        console.error(`Error al ejecutar el contenedor Docker: código de salida ${code}`);
+      }
+    });
+    spa.on('close', () => {
+      mainWindow.webContents.send("StatusStart", 2);
+      const spa = spawn('docker', ['exec', 'ollama', 'ollama', 'run', 'llama2']);
+      spa.stdout.on('data', (data) => {
+        console.log(data.toString());
+      });
+      spa.stderr.on('data', (data) => {
+        console.error(data.toString());
+      });
+      spa.on('exit', (code) => {
+        if (code === 0) {
+          console.log('El contenedor Docker se ejecutó correctamente.');
+        } else {
+          console.error(`Error al ejecutar el contenedor Docker: código de salida ${code}`);
+        }
+      });
+      spa.on('close', () => {
+        mainWindow.webContents.send("StatusStart", 3);
+      })
+    })
+    
+    /* exec("docker run -d -v ollama:/root/.ollama -p 11434:11434 --name ollama ollama/ollama", (error, stdout, stderr) => {
       if (error) {
         console.error(`Error en la ejecución del comando docker run -d -v ollama:/root/.ollama -p 11434:11434 --name ollama ollama/ollama: ${error}`);
         return;
@@ -142,7 +177,7 @@ function createWindow() {
         mainWindow.webContents.send("StatusStart", 3);
 //         curl http://localhost:11434/api/generate -d '{"model": "llama2", "prompt": "cual es la capital de España??", "stream": false}'  
       })
-    })
+    }) */
     /* spawn('docker', ['run', '-d', '-v', 'ollama:/root/.ollama', '-p', '11434:11434', '--name', 'ollama', 'ollama/ollama'], options)
       .on('exit', (code) => {
         if (code !== 0) {
