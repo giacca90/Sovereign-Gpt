@@ -61,9 +61,6 @@ export class AppComponent {
       const jsonObject = JSON.parse(respuesta);
       const resp = jsonObject.response;
       console.log('Respuesta: '+resp);
-      this.chat = '<p>Respuesta: '+resp+'</p>\n'+this.chat;
-      if(chat) 
-        chat.innerHTML = this.chat;
     })
   }
 }

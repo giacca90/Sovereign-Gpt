@@ -42,10 +42,7 @@ export class IpcService {
     if(!this._ipc) {
       return;
     }
-    this._ipc.removeAllListeners("busca");
-    this._ipc.removeAllListeners("arraybuffer");
-
-    this._ipc.removeAllListeners("openDialog");
-    this._ipc.removeAllListeners("archivos-de-carpeta");
+    this._ipc.removeAllListeners("pregunta");
+    this._ipc.removeAllListeners("respuesta");
   }
 }
