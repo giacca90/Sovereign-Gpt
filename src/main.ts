@@ -185,10 +185,23 @@ function createWindow() {
     })
   });
 
+  ipcMain.on("pregunta", (_event:any, pregunta:string) => {
+    exec(`curl http://localhost:11434/api/generate -d '{"model": "llama2", "prompt": "${pregunta}", "stream": false}'`,(error, stdout, stderr) => {
+      if (error) {
+        console.error(`Error en hacer la pregunta: ${error}`);
+        return;
+      }
+      console.log("Respuesta:");
+      console.log(stdout);
+      mainWindow.webContents.send('respuesta', stdout);
+    })
+  })
+
   function sendMessage(message:string) {
     const mex:string = message.replace(/\033\[[0-9;?]*[a-zA-Z0-9]/g, '')
     mainWindow.webContents.send("terminalMessage", mex);
   }
+
 }
 
 // This method will be called when Electron has finished

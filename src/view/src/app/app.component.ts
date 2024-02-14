@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Component, ChangeDetectorRef } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
@@ -45,5 +46,16 @@ export class AppComponent {
   closeTerminal() {
     this.terminal = false;
     this.cdr.detectChanges();
+  }
+
+  pregunta() {
+    const pregunta:string = (document.getElementById('pregunta') as HTMLInputElement).value;
+    console.log('Pregunta: '+pregunta);
+    this.IPC.send('pregunta', pregunta);
+    this.IPC.on('respuesta', (_event:any, respuesta:string) => {
+      const jsonObject = JSON.parse(respuesta);
+      const resp = jsonObject.response;
+      console.log('Respuesta: '+resp);
+    })
   }
 }
