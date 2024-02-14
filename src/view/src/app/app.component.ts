@@ -13,6 +13,8 @@ import { IpcService } from './services/ipc-service.service';
 export class AppComponent {
   
   status:number = 0;
+  terminal:boolean = true;
+  terminalMessage:string = '';
 
   constructor(public IPC:IpcService, private cdr: ChangeDetectorRef) {
     IPC.send("Start");
@@ -20,13 +22,28 @@ export class AppComponent {
       this.status = status;
       this.cdr.detectChanges();
     })
+
+    IPC.on("terminalMessage", (_event: any, message:string) => {
+      this.terminalMessage = message;
+      this.cdr.detectChanges();
+    })
   }
 
-  InstallDocker() {
+  InstallDocker() { 
+    document.getElementById('button')?.setAttribute("unable", 'true');
     this.IPC.send("InstallDocker");
+    this.cdr.detectChanges();
   }
 
   InstallOllama() {
+    document.getElementById('button')?.setAttribute("unable", 'true');
+    this.terminal === true;
     this.IPC.send("InstallOllama");
+    this.cdr.detectChanges();
+  }
+
+  closeTerminal() {
+    this.terminal = false;
+    this.cdr.detectChanges();
   }
 }

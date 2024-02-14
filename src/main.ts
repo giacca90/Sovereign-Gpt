@@ -5,6 +5,7 @@ import * as path from "path";
 import * as os from "os";
 import { exec, spawn } from "child_process";
 import * as sudoPrompt from "sudo-prompt";
+import { stdin, stdout } from 'process';
 
 type StdioOptions = 'inherit' | 'pipe' | 'ignore';
 const options: { stdio: StdioOptions[] } = {
@@ -42,6 +43,7 @@ function createWindow() {
       }
       console.log("Resultado docker --version:");
       console.log(stdout);
+      sendMessage(stdout);
       mainWindow.webContents.send("StatusStart", 1);
       exec("docker ps -a", (error, stdout, stderr) => {
         if (error) {
@@ -50,6 +52,7 @@ function createWindow() {
         }
         console.log("Resultado docker ps -a:");
         console.log(stdout);
+        sendMessage(stdout);
         if(stdout.includes("ollama")) {
           mainWindow.webContents.send("StatusStart", 2);
           exec("docker start ollama", (error, stdout, stderr) => {
@@ -59,15 +62,25 @@ function createWindow() {
             }
             console.log("Resultado docker start ollama:");
             console.log(stdout);
-            exec("docker exec ollama ollama run llama2", (error, stdout, stderr) => {
-              if (error) {
-              console.error(`Error en la ejecución del comando docker exec ollama ollama run llama2: ${error}`);
-              return;
+            sendMessage(stdout);
+            const spa = spawn('docker', ['exec', 'ollama', 'ollama', 'run', 'llama2']);
+            spa.stdout.on('data', (data) => {
+              console.log(data.toString());
+              sendMessage(data.toString());
+            });
+            spa.stderr.on('data', (data) => {
+              console.error(data.toString());
+              sendMessage(data.toString());
+            });
+            spa.on('exit', (code) => {
+              if (code === 0) {
+                console.log('El contenedor Docker se ejecutó correctamente.');
+              } else {
+                console.error(`Error al ejecutar el contenedor Docker: código de salida ${code}`);
               }
-              console.log("Resultado docker exec ollama ollama run llama2:");
-              console.log(stdout);
+            });
+            spa.on('close', () => {
               mainWindow.webContents.send("StatusStart", 3);
-//            curl http://localhost:11434/api/generate -d '{"model": "llama2", "prompt": "cual es la capital de España??", "stream": false}'  
             })
           })
         }
@@ -79,6 +92,7 @@ function createWindow() {
     if (os.platform() === "win32") {
       sudoPrompt.exec("");
     } else if (os.platform() === "linux") {
+      sendMessage('Esparando permisos...');
       sudoPrompt.exec(
         "apt update; sudo apt install apt-transport-https ca-certificates curl software-properties-common",
         { name: "SovereignGPT" },
@@ -87,8 +101,10 @@ function createWindow() {
             console.error(
               "Error en sudo apt update y instalación de dependencias: " + error
             );
+            sendMessage("Error en sudo apt update y instalación de dependencias: " + error);
           } else {
             console.log("Respuesta a sudo apt update:\n" + stdout);
+            sendMessage('Esparando permisos...');
             sudoPrompt.exec(
               'curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo -y gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg; sudo echo "deb [signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu lunar stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null',
               { name: "SovereignGPT" },
@@ -102,6 +118,7 @@ function createWindow() {
                     "Respuesta al configurar el repositorio de Docker:\n" +
                       stdout
                   );
+                  sendMessage('Esparando permisos...');
                   sudoPrompt.exec(
                     "apt update; sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin; sudo usermod -aG docker $USER",
                     { name: "SovereignGPT" },
@@ -127,15 +144,19 @@ function createWindow() {
     const spa = spawn('docker', ['run', '-d', '-v', 'ollama:/root/.ollama', '-p', '11434:11434', '--name', 'ollama', 'ollama/ollama']);
     spa.stdout.on('data', (data) => {
       console.log(data.toString());
+      sendMessage(data.toString());
     });
     spa.stderr.on('data', (data) => {
       console.error(data.toString());
+      sendMessage(data.toString());
     });
     spa.on('exit', (code) => {
       if (code === 0) {
         console.log('El contenedor Docker se ejecutó correctamente.');
+        sendMessage('El contenedor Docker se ejecutó correctamente.');
       } else {
         console.error(`Error al ejecutar el contenedor Docker: código de salida ${code}`);
+        sendMessage(`Error al ejecutar el contenedor Docker: código de salida ${code}`);
       }
     });
     spa.on('close', () => {
@@ -143,59 +164,31 @@ function createWindow() {
       const spa = spawn('docker', ['exec', 'ollama', 'ollama', 'run', 'llama2']);
       spa.stdout.on('data', (data) => {
         console.log(data.toString());
+        sendMessage(data.toString());
       });
       spa.stderr.on('data', (data) => {
         console.error(data.toString());
+        sendMessage(data.toString());
       });
       spa.on('exit', (code) => {
         if (code === 0) {
-          console.log('El contenedor Docker se ejecutó correctamente.');
+          console.log('El modelo se ejecutó correctamente.');
+          sendMessage('El modelo se ejecutó correctamente.');
         } else {
           console.error(`Error al ejecutar el contenedor Docker: código de salida ${code}`);
+          sendMessage(`Error al ejecutar el contenedor Docker: código de salida ${code}`);
         }
       });
       spa.on('close', () => {
         mainWindow.webContents.send("StatusStart", 3);
       })
     })
-    
-    /* exec("docker run -d -v ollama:/root/.ollama -p 11434:11434 --name ollama ollama/ollama", (error, stdout, stderr) => {
-      if (error) {
-        console.error(`Error en la ejecución del comando docker run -d -v ollama:/root/.ollama -p 11434:11434 --name ollama ollama/ollama: ${error}`);
-        return;
-      }
-      console.log("Resultado docker run -d -v ollama:/root/.ollama -p 11434:11434 --name ollama ollama/ollama:");
-      console.log(stdout);
-      mainWindow.webContents.send("StatusStart", 2);
-      exec("docker exec ollama ollama run llama2", (error, stdout, stderr) => {
-        if (error) {
-          console.error(`Error en la ejecución del comando docker exec ollama ollama run llama2: ${error}`);
-          return;
-        }
-        console.log("Resultado docker exec ollama ollama run llama2:");
-        console.log(stdout);
-        mainWindow.webContents.send("StatusStart", 3);
-//         curl http://localhost:11434/api/generate -d '{"model": "llama2", "prompt": "cual es la capital de España??", "stream": false}'  
-      })
-    }) */
-    /* spawn('docker', ['run', '-d', '-v', 'ollama:/root/.ollama', '-p', '11434:11434', '--name', 'ollama', 'ollama/ollama'], options)
-      .on('exit', (code) => {
-        if (code !== 0) {
-          console.error(`Error al instalar Ollama en fase 1: código de salida ${code}`);
-          return;
-        } */
-  
-        /* spawn('docker', ['exec', '-it', 'ollama', 'ollama', 'run', 'llama2'], options)
-          .on('exit', (code) => {
-            if (code !== 0) {
-              console.error(`Error al instalar Ollama en fase 2: código de salida ${code}`);
-              return;
-            }
-            console.log("Resultado install el modelo:");
-            mainWindow.webContents.send("StatusStart", 2);
-          });
-      }) */;
   });
+
+  function sendMessage(message:string) {
+    const mex:string = message.replace(/\033\[[0-9;?]*[a-zA-Z0-9]/g, '')
+    mainWindow.webContents.send("terminalMessage", mex);
+  }
 }
 
 // This method will be called when Electron has finished

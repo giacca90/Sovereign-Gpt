@@ -1,20 +1,26 @@
 @switch (status) {
   @case (0) {
     <h3>Docker no está instalado en este equipo!!</h3>
-    <button type="submit" (click)="InstallDocker()">Instala Docker</button>
+    <button type="submit" id="button" (click)="InstallDocker()">Instala Docker</button>
   }
   @case (1) {
     <h3>No se ha encontrado ningún modelo instalado en esta maquina!!</h3>
-    <button type="submit" (click)="InstallOllama()">Instalar Modelo</button>
+    <button type="submit" dir="button" (click)="InstallOllama()">Instalar Modelo</button>
   }
   @case (2) {
     <h3>Arrancando el modelo. ESPERE...</h3>
   }
   @case (3) {
+    {{closeTerminal()}}
     <h3>Modelo en marcha!!!</h3>
   }
 }
 
+@if(terminal === true) {
+<div class="terminal">
+  <p>{{terminalMessage}}</p>
+</div>
+}
 
 <!-- @if(docker === true && ollama === true) {
   <h3>Modelo en marcha!!!</h3>
