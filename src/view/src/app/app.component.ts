@@ -16,6 +16,7 @@ export class AppComponent {
   status:number = 0;
   terminal:boolean = true;
   terminalMessage:string = '';
+  chat:string = '';
 
   constructor(public IPC:IpcService, private cdr: ChangeDetectorRef) {
     IPC.send("Start");
@@ -50,12 +51,19 @@ export class AppComponent {
 
   pregunta() {
     const pregunta:string = (document.getElementById('pregunta') as HTMLInputElement).value;
+    const chat = document.getElementById('chat');
     console.log('Pregunta: '+pregunta);
+    this.chat = '<p>Pregunta: '+pregunta+'</p>\n'+this.chat;
+    if(chat) 
+      chat.innerHTML = this.chat
     this.IPC.send('pregunta', pregunta);
     this.IPC.on('respuesta', (_event:any, respuesta:string) => {
       const jsonObject = JSON.parse(respuesta);
       const resp = jsonObject.response;
       console.log('Respuesta: '+resp);
+      this.chat = '<p>Respuesta: '+resp+'</p>\n'+this.chat;
+      if(chat) 
+        chat.innerHTML = this.chat;
     })
   }
 }
