@@ -53,7 +53,7 @@ export class AppComponent {
     const pregunta:string = (document.getElementById('pregunta') as HTMLInputElement).value;
     const chat = document.getElementById('chat');
     console.log('Pregunta: '+pregunta);
-    this.chat = '<p>Pregunta: '+pregunta+'</p>\n'+this.chat;
+    this.chat = '<p style="color: blue;">Pregunta: '+pregunta+'</p>\n'+this.chat;
     if(chat) 
       chat.innerHTML = this.chat
     this.IPC.send('pregunta', pregunta);
@@ -70,7 +70,7 @@ export class AppComponent {
           index = this.chat.indexOf('</p>');
           this.chat = this.chat.substring(0,index)+resp+this.chat.substring(index);
         }else{
-          this.chat = '<p>Respuesta: '+resp+'</p>\n'+this.chat;
+          this.chat = '<p style="color: green;">Respuesta: '+resp+'</p>\n'+this.chat;
         }
         if(chat) 
           chat.innerHTML = this.chat;
