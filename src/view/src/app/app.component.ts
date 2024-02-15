@@ -59,8 +59,24 @@ export class AppComponent {
     this.IPC.send('pregunta', pregunta);
     this.IPC.on('respuesta', (_event:any, respuesta:string) => {
       const jsonObject = JSON.parse(respuesta);
-      const resp = jsonObject.response;
+      const resp:string = jsonObject.response;
+      const fin:boolean = jsonObject.done;
       console.log('Respuesta: '+resp);
-    })
+      
+      if(!fin) {
+        let index:number = this.chat.indexOf('\n');
+        const firstLine:string = this.chat.substring(0,index);
+        if(firstLine.includes('Respuesta')) {
+          index = this.chat.indexOf('</p>');
+          this.chat = this.chat.substring(0,index)+resp+this.chat.substring(index);
+        }else{
+          this.chat = '<p>Respuesta: '+resp+'</p>\n'+this.chat;
+        }
+        if(chat) 
+          chat.innerHTML = this.chat;
+      }else{
+        this.IPC.clear();
+      }
+    });
   }
 }

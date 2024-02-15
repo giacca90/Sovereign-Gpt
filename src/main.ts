@@ -1,11 +1,17 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { app, BrowserWindow, screen, Menu, ipcMain } from "electron";
-import * as path from "path";
 import * as os from "os";
 import { exec, spawn } from "child_process";
 import * as sudoPrompt from "sudo-prompt";
-import { stdin, stdout } from 'process';
+import * as http from 'http';
+
+interface RequestData {
+  model: string;
+  prompt: string;
+  stream: boolean;
+}
+
 
 type StdioOptions = 'inherit' | 'pipe' | 'ignore';
 const options: { stdio: StdioOptions[] } = {
@@ -186,15 +192,42 @@ function createWindow() {
   });
 
   ipcMain.on("pregunta", (_event:any, pregunta:string) => {
-    exec(`curl http://localhost:11434/api/generate -d '{"model": "llama2", "prompt": "${pregunta}", "stream": false}'`,(error, stdout, stderr) => {
-      if (error) {
-        console.error(`Error en hacer la pregunta: ${error}`);
-        return;
-      }
-      console.log("Respuesta:");
-      console.log(stdout);
-      mainWindow.webContents.send('respuesta', stdout);
-    })
+
+    const apiUrl = 'http://localhost:11434/api/generate';
+    const requestData: RequestData = {
+      model: 'llama2',
+      prompt: pregunta,
+      stream: true,
+    };
+    // Convierte el objeto de datos en una cadena JSON
+    const dataString:string = JSON.stringify(requestData);
+
+    // Configura las opciones de la solicitud
+    const options: http.RequestOptions = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(dataString),
+      },
+    };
+
+    const request: http.ClientRequest = http.request(apiUrl, options, (response) => {
+      // Manejar el flujo de datos en tiempo real
+      response.on('data', (chunk) => {
+        console.log(chunk.toString());
+        mainWindow.webContents.send('respuesta', chunk.toString());
+      });
+    
+      // Manejar la finalización de la solicitud
+      response.on('end', () => {
+        console.log('Solicitud completada');
+      });
+    });
+    // Enviar datos en el cuerpo de la solicitud
+    request.write(dataString);
+
+    // Finalizar la solicitud
+    request.end();
   })
 
   function sendMessage(message:string) {
