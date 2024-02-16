@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { app, BrowserWindow, screen, Menu, ipcMain } from "electron";
+import * as path from 'path';
 import * as os from "os";
 import { exec, spawn } from "child_process";
 import * as sudoPrompt from "sudo-prompt";
@@ -27,7 +28,8 @@ function createWindow() {
   });
 
   // and load the index.html of the app.
-  mainWindow.loadFile("../src/view/dist/browser/index.html");
+//  mainWindow.loadFile("../src/view/dist/browser/index.html");
+  mainWindow.loadFile(path.join(__dirname, '../src/view/dist/browser/index.html'));
 
   // Open the DevTools.
   mainWindow.webContents.openDevTools();
