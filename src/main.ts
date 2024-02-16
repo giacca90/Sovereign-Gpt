@@ -100,7 +100,13 @@ function createWindow() {
         sendMessage(data.toString());
       });
       spa.on('close', () => {
-        sudoPrompt.exec("");
+        exec('start "%USERPROFILE%\\DockerDesktopInstaller.exe"', (error, stdout, stderr) => {
+          if(error) {
+            console.error("Error en Instalar Docker: "+error);
+            return;
+          }
+          sendMessage('Reiniciar el Equipo despues de Instalar Docker!!!');
+        });
       })
     } else if (os.platform() === "linux") {
       sendMessage('Esparando permisos...');
