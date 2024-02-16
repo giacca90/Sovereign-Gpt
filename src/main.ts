@@ -12,12 +12,6 @@ interface RequestData {
   stream: boolean;
 }
 
-
-type StdioOptions = 'inherit' | 'pipe' | 'ignore';
-const options: { stdio: StdioOptions[] } = {
-  stdio: ['inherit', 'inherit', 'pipe'],
-};
-
 function createWindow() {
   // Create the browser window.
   const { width, height } = screen.getPrimaryDisplay().workAreaSize;
@@ -96,7 +90,18 @@ function createWindow() {
 
   ipcMain.on("InstallDocker", (_event) => {
     if (os.platform() === "win32") {
-      sudoPrompt.exec("");
+      const spa = spawn('curl', ['-L', 'https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe', '-o', `"%USERPROFILE%\\DockerDesktopInstaller.exe"`]);
+      spa.stdout.on('data', (data) => {
+        console.log(data.toString());
+        sendMessage(data.toString());
+      });
+      spa.stderr.on('data', (data) => {
+        console.error(data.toString());
+        sendMessage(data.toString());
+      });
+      spa.on('close', () => {
+        sudoPrompt.exec("");
+      })
     } else if (os.platform() === "linux") {
       sendMessage('Esparando permisos...');
       sudoPrompt.exec(
