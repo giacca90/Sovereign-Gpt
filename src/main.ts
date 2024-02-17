@@ -77,13 +77,11 @@ function createWindow() {
             spa.on('exit', (code) => {
               if (code === 0) {
                 console.log('El contenedor Docker se ejecutó correctamente.');
+                mainWindow.webContents.send("StatusStart", 3);
               } else {
                 console.error(`Error al ejecutar el contenedor Docker: código de salida ${code}`);
               }
             });
-            spa.on('close', () => {
-              mainWindow.webContents.send("StatusStart", 3);
-            })
           })
         }
       })
@@ -92,7 +90,7 @@ function createWindow() {
 
   ipcMain.on("InstallDocker", (_event) => {
     if (os.platform() === "win32") {
-      const spa = spawn('curl', ['-L', 'https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe', '-o', `"%USERPROFILE%\\DockerDesktopInstaller.exe"`]);
+      const spa = spawn('curl', ['-L', 'https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe', '-o', `${process.env.USERPROFILE}\\DockerDesktopInstaller.exe`], { shell: true });
       spa.stdout.on('data', (data) => {
         console.log(data.toString());
         sendMessage(data.toString());
@@ -101,15 +99,21 @@ function createWindow() {
         console.error(data.toString());
         sendMessage(data.toString());
       });
-      spa.on('close', () => {
-        exec('start "%USERPROFILE%\\DockerDesktopInstaller.exe"', (error, stdout, stderr) => {
-          if(error) {
-            console.error("Error en Instalar Docker: "+error);
-            return;
-          }
-          sendMessage('Reiniciar el Equipo despues de Instalar Docker!!!');
-        });
-      })
+      spa.on('exit', (code) => {
+        if (code === 0) {
+          console.log('Docker se ha descargado correctamente.');
+          exec('start /wait "" "'+process.env.USERPROFILE+'\\DockerDesktopInstaller.exe"', (error, stdout, stderr) => {
+            if(error) {
+              console.error("Error en Instalar Docker: "+error);
+              return;
+            }
+            sendMessage('Reiniciar el Equipo despues de Instalar Docker!!!');
+          });
+        } else {
+          console.error(`Error al descargar Docker: código de salida ${code}`);
+        }
+      });
+
     } else if (os.platform() === "linux") {
       sendMessage('Esparando permisos...');
       sudoPrompt.exec(
@@ -159,6 +163,7 @@ function createWindow() {
     }
   });
 
+// docker run -d -v ollama:/root/.ollama -p 11434:11434 --name ollama ollama/ollama
   ipcMain.on("InstallOllama", (_event) => {
     const spa = spawn('docker', ['run', '-d', '-v', 'ollama:/root/.ollama', '-p', '11434:11434', '--name', 'ollama', 'ollama/ollama']);
     spa.stdout.on('data', (data) => {
@@ -173,35 +178,31 @@ function createWindow() {
       if (code === 0) {
         console.log('El contenedor Docker se ejecutó correctamente.');
         sendMessage('El contenedor Docker se ejecutó correctamente.');
+        mainWindow.webContents.send("StatusStart", 2);
+        const spa = spawn('docker', ['exec', 'ollama', 'ollama', 'run', 'llama2']);
+        spa.stdout.on('data', (data) => {
+          console.log(data.toString());
+          sendMessage(data.toString());
+        });
+        spa.stderr.on('data', (data) => {
+          console.error(data.toString());
+          sendMessage(data.toString());
+        });
+        spa.on('exit', (code) => {
+          if (code === 0) {
+            console.log('El modelo se ejecutó correctamente.');
+            sendMessage('El modelo se ejecutó correctamente.');
+            mainWindow.webContents.send("StatusStart", 3);
+          } else {
+            console.error(`Error al ejecutar el contenedor Docker: código de salida ${code}`);
+            sendMessage(`Error al ejecutar el contenedor Docker: código de salida ${code}`);
+          }
+        }); 
       } else {
         console.error(`Error al ejecutar el contenedor Docker: código de salida ${code}`);
         sendMessage(`Error al ejecutar el contenedor Docker: código de salida ${code}`);
       }
     });
-    spa.on('close', () => {
-      mainWindow.webContents.send("StatusStart", 2);
-      const spa = spawn('docker', ['exec', 'ollama', 'ollama', 'run', 'llama2']);
-      spa.stdout.on('data', (data) => {
-        console.log(data.toString());
-        sendMessage(data.toString());
-      });
-      spa.stderr.on('data', (data) => {
-        console.error(data.toString());
-        sendMessage(data.toString());
-      });
-      spa.on('exit', (code) => {
-        if (code === 0) {
-          console.log('El modelo se ejecutó correctamente.');
-          sendMessage('El modelo se ejecutó correctamente.');
-        } else {
-          console.error(`Error al ejecutar el contenedor Docker: código de salida ${code}`);
-          sendMessage(`Error al ejecutar el contenedor Docker: código de salida ${code}`);
-        }
-      });
-      spa.on('close', () => {
-        mainWindow.webContents.send("StatusStart", 3);
-      })
-    })
   });
 
   ipcMain.on("pregunta", (_event:any, pregunta:string) => {

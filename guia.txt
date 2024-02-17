@@ -1,0 +1,29 @@
+# Instalar la característica de WSL
+wsl.exe --install
+
+# Establecer WSL 2 como la versión predeterminada
+wsl.exe --set-default-version 2
+
+# Descargar e instalar el kernel de WSL 2 (puedes necesitar reiniciar después de esto)
+# Más información: https://aka.ms/wsl2kernel
+# Invoke-WebRequest -Uri https://aka.ms/wsl2kernel -OutFile $env:USERPROFILE/wsl_update_x64.msi
+curl -o %USERPROFILE%\wsl_update_x64.msi https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi
+# Start-Process -Wait -FilePath msiexec -ArgumentList "/i", "$env:USERPROFILE/wsl_update_x64.msi"
+msiexec /i %USERPROFILE%\wsl_update_x64.msi
+
+# Iniciar una distribución de Linux (por ejemplo, Ubuntu) para completar la configuración
+wsl.exe
+
+# Instalar Docker Desktop para Windows
+# Descargar desde: https://www.docker.com/products/docker-desktop
+# Sigue las instrucciones de instalación
+
+# Iniciar Docker Desktop
+
+# wsl --install -d Alpine -v 2 && wsl.exe --set-default-version 2 && curl -o %USERPROFILE%\wsl_update_x64.msi https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi && msiexec /i %USERPROFILE%\wsl_update_x64.msi wsl.exe && wsl
+
+dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart && shutdown /r /f /t 0
+
+wsl.exe --set-default-version 2 && wsl --install -d Alpine -v 2
+
+# https://docs.docker.com/desktop/install/windows-install/

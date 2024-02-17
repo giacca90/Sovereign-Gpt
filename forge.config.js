@@ -8,7 +8,7 @@ module.exports = {
   rebuildConfig: {},
 
   makers: [
-    {
+/*     {
       name: "@electron-forge/maker-squirrel",
       config: {
         certificateFile: './cert.pfx',
@@ -17,7 +17,7 @@ module.exports = {
         description: "ChatBot Soberano!!",
         //        setupIcon: 'favicon.ico'
       },
-    },
+    }, */
     {
       name: "@electron-forge/maker-zip",
       platforms: ["darwin", "win32"],
