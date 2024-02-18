@@ -32,13 +32,15 @@ export class AppComponent {
   }
 
   InstallDocker() { 
-    document.getElementById('button')?.setAttribute("unable", 'true');
+    const button = document.getElementById('button') as HTMLButtonElement;
+    button.disabled = true;
     this.IPC.send("InstallDocker");
     this.cdr.detectChanges();
   }
 
   InstallOllama() {
-    document.getElementById('button')?.setAttribute("unable", 'true');
+    const button = document.getElementById('button') as HTMLButtonElement;
+    button.disabled = true;
     this.terminal === true;
     this.IPC.send("InstallOllama");
     this.cdr.detectChanges();

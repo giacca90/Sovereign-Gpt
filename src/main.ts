@@ -41,12 +41,10 @@ function createWindow() {
     exec("docker --version", (error, stdout, stderr) => {
       if (error) {
         console.error(`Error en la ejecución del comando docker --version: ${error}`);
-        sendMessage(`Error en la ejecución del comando docker --version: ${error}`);
         return;
       }
       console.log("Resultado docker --version:");
       console.log(stdout);
-      sendMessage(stdout);
       mainWindow.webContents.send("StatusStart", 1);
       exec("docker ps -a", (error, stdout, stderr) => {
         if (error) {
@@ -56,7 +54,6 @@ function createWindow() {
         }
         console.log("Resultado docker ps -a:");
         console.log(stdout);
-        sendMessage(stdout);
         if(stdout.includes("ollama")) {
           mainWindow.webContents.send("StatusStart", 2);
           const spa = spawn('docker', ['start', 'ollama']);
@@ -103,23 +100,10 @@ function createWindow() {
 
   ipcMain.on("InstallDocker", (_event) => {
     if (os.platform() === "win32") {
-      const spa = spawn('wsl', ['--install']);
-      spa.stdin.write("user\n");
-      spa.stdin.write("user\n");
-      spa.stdin.write("user\n");
-      spa.stdout.on('data', (data) => {
-        console.log('stdout: '+data.toString());
-        sendMessage(data.toString());
-      });
-      spa.stderr.on('data', (data) => {
-        console.error('stderr: '+data.toString());
-        sendMessage(data.toString());
-      });
-      spa.on('exit', (code) => {
-        if(code === 0) {
-          console.log("WSL instalado sin problemas!!");
-          sendMessage("WSL instalado sin problemas!!");
-          const spa = spawn('curl', ['-L', 'https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe', '-o', `${process.env.USERPROFILE}\\DockerDesktopInstaller.exe`], { shell: true });
+      exec('wsl --status', (error, stdout, stderr) => {
+        if(error) {
+          console.error("Error en ejecutar el comando "+error);
+          const spa = spawn('wsl', ['--install']);
           spa.stdout.on('data', (data) => {
             console.log('stdout: '+data.toString());
             sendMessage(data.toString());
@@ -129,35 +113,53 @@ function createWindow() {
             sendMessage(data.toString());
           });
           spa.on('exit', (code) => {
-            if (code === 0) {
-              console.log('Docker se ha descargado correctamente.');
-              sendMessage('Docker se ha descargado correctamente.');
-              const spa = spawn ('start',['/wait', '""','"'+process.env.USERPROFILE+'\\DockerDesktopInstaller.exe"']);
-              spa.stdout.on("data", (data) => {
-                console.log('stdout: '+data.toString());
-                sendMessage(data.toString());
-              });
-              spa.stderr.on("data", (data) => {
-                console.error('stderr: '+data.toString());
-                sendMessage(data.toString());
-              });
-              spa.on('exit', (code:number) => {
-                if(code === 0) {
-                  sendMessage('Reiniciar el Equipo despues de Instalar Docker!!!');
-                }else{
-                  console.error('Error en instalar Docker. '+code);
-                  sendMessage('Error en instalar Docker. '+code)
-                }
-              })
+            if(code === 0) {
+              console.log("WSL instalado sin problemas!!");
+              sendMessage("Reinicia el Equipo y sigue las instrucciónes en la ventana emergente.");
             } else {
-              console.error("Error en descargar Docker: "+code);
-              sendMessage("Error en descargar Docker: "+code);
+              console.error("Error en instalar WSL: "+code);
+              sendMessage("Error en instalar WSL: "+code);
+              return;
             }
           })
-        } else {
-          console.error("Error en instalar WSL: "+code);
-          sendMessage("Error en instalar WSL: "+code);
         }
+        sendMessage(stdout);
+        const spa = spawn('curl', ['-L', 'https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe', '-o', `${process.env.USERPROFILE}\\DockerDesktopInstaller.exe`]);
+        spa.stdout.on('data', (data) => {
+          console.log('stdout: '+data.toString());
+          sendMessage(data.toString());
+        });
+        spa.stderr.on('data', (data) => {
+          console.error('stderr: '+data.toString());
+          sendMessage(data.toString());
+        });
+        spa.on('exit', (code) => {
+          if (code === 0) {
+            console.log('Docker se ha descargado correctamente.');
+            sendMessage('Docker se ha descargado correctamente.');
+// start /wait "" "%USERPROFILE%\DockerDesktopInstaller.exe"
+            const spa = spawn (`"${process.env.USERPROFILE}\\DockerDesktopInstaller.exe"`,{shell: true});
+            spa.stdout.on("data", (data) => {
+              console.log('stdout: '+data.toString());
+              sendMessage(data.toString());
+            });
+            spa.stderr.on("data", (data) => {
+              console.error('stderr: '+data.toString());
+              sendMessage(data.toString());
+            });
+            spa.on('exit', (code:number) => {
+              if(code === 0) {
+                sendMessage('Reiniciar el Equipo despues de Instalar Docker!!!');
+              }else{
+                console.error('Error en instalar Docker. '+code);
+                sendMessage('Error en instalar Docker. '+code)
+              }
+            })
+          } else {
+            console.error("Error en descargar Docker: "+code);
+            sendMessage("Error en descargar Docker: "+code);
+          }
+        })     
       })
     } else if (os.platform() === "linux") {
       sendMessage('Esparando permisos...');
@@ -290,10 +292,10 @@ function createWindow() {
   })
 
   function sendMessage(message:string) {
-    const mex:string = message.replace(/\033\[[0-9;?]*[a-zA-Z0-9]/g, '')
-    mainWindow.webContents.send("terminalMessage", mex);
+    const mex:string = message.replace(/\033\[[0-9;?]*[a-zA-Z0-9]/g, '');
+    if(mex && mex.length > 0 && mex != ' ' && mex != '\n' && mex != '\f')
+      mainWindow.webContents.send("terminalMessage", mex);
   }
-
 }
 
 // This method will be called when Electron has finished
