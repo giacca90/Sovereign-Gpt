@@ -10,6 +10,7 @@ import * as http from 'http';
 interface RequestData {
   model: string;
   prompt: string;
+  context: number[];
   stream: boolean;
 }
 
@@ -26,6 +27,8 @@ function createWindow() {
       nodeIntegration: true,
     },
   });
+
+  let contexto: number[] = [];
 
   // and load the index.html of the app.
   //  mainWindow.loadFile("../src/view/dist/browser/index.html");
@@ -258,6 +261,7 @@ function createWindow() {
     const requestData: RequestData = {
       model: 'llama2',
       prompt: pregunta,
+      context: contexto,
       stream: true,
     };
     // Convierte el objeto de datos en una cadena JSON
@@ -277,11 +281,17 @@ function createWindow() {
       response.on('data', (chunk) => {
         console.log(chunk.toString());
         mainWindow.webContents.send('respuesta', chunk.toString());
+        const jsonObject = JSON.parse(chunk.toString());
+        const fin:boolean = jsonObject.done;
+        if(fin) {
+          const context:number[] = jsonObject.context;
+          contexto = context;
+        }
       });
     
       // Manejar la finalización de la solicitud
       response.on('end', () => {
-        console.log('Solicitud completada');
+        console.log('Solicitud completada: '+contexto);
       });
     });
     // Enviar datos en el cuerpo de la solicitud
