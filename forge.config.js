@@ -1,14 +1,14 @@
 /* eslint-disable no-undef */
 module.exports = {
-  packagerConfig: {
-    asar: true,
-    derefSymlinks: true,
-    //    icon: 'favicon.ico'
-  },
-  rebuildConfig: {},
+	packagerConfig: {
+		asar: true,
+		derefSymlinks: true,
+		//    icon: 'favicon.ico'
+	},
+	rebuildConfig: {},
 
-  makers: [
-/*     {
+	makers: [
+		/*     {
       name: "@electron-forge/maker-squirrel",
       config: {
         certificateFile: './cert.pfx',
@@ -18,27 +18,27 @@ module.exports = {
         //        setupIcon: 'favicon.ico'
       },
     }, */
-    {
-      name: "@electron-forge/maker-zip",
-      platforms: ["darwin", "win32"],
-    },
-    {
-      name: "@electron-forge/maker-deb",
-      config: {
-        iconUrl: "favicon-linux.png",
-      },
-    },
-    {
-      name: "@electron-forge/maker-rpm",
-      config: {
-        iconUrl: "favicon-linux.png",
-      },
-    },
-  ],
-  plugins: [
-    {
-      name: "@electron-forge/plugin-auto-unpack-natives",
-      config: {},
-    },
-  ],
+		{
+			name: '@electron-forge/maker-zip',
+			platforms: ['darwin', 'win32'],
+		},
+		{
+			name: '@electron-forge/maker-deb',
+			config: {
+				iconUrl: 'favicon-linux.png',
+			},
+		},
+		{
+			name: '@electron-forge/maker-rpm',
+			config: {
+				iconUrl: 'favicon-linux.png',
+			},
+		},
+	],
+	plugins: [
+		{
+			name: '@electron-forge/plugin-auto-unpack-natives',
+			config: {},
+		},
+	],
 };
