@@ -3,21 +3,21 @@ module.exports = {
 	packagerConfig: {
 		asar: true,
 		derefSymlinks: true,
-		//    icon: 'favicon.ico'
+		icon: 'favicon.ico',
 	},
 	rebuildConfig: {},
 
 	makers: [
-		/*     {
-      name: "@electron-forge/maker-squirrel",
-      config: {
-        certificateFile: './cert.pfx',
-        certificatePassword: process.env.CERTIFICATE_PASSWORD,
-        authors: "Giacca90",
-        description: "ChatBot Soberano!!",
-        //        setupIcon: 'favicon.ico'
-      },
-    }, */
+		{
+			name: '@electron-forge/maker-squirrel',
+			config: {
+				certificateFile: './cert.pfx',
+				certificatePassword: process.env.CERTIFICATE_PASSWORD,
+				authors: 'Giacca90',
+				description: 'ChatBot Soberano!!',
+				setupIcon: 'favicon.ico',
+			},
+		},
 		{
 			name: '@electron-forge/maker-zip',
 			platforms: ['darwin', 'win32'],

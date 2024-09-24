@@ -1,9 +1,28 @@
 /* You can add global styles to this file, and also import other style files */
+:root {
+  --color-fondo-oscuro: rgba(0, 0, 0, 0.83);
+  --color-texto-oscuro: #ffffff;
+  --color-background-input: #c0c0c022;
+}
+
 .cabecera {
-    background-color: aqua;
-    text-align: center;
-    color: goldenrod;
-    border: 0px;
-    padding: 0px;
-    margin: 0px;
+  background-color: aqua;
+  text-align: center;
+  color: goldenrod;
+  border: 0px;
+  padding: 0px;
+  margin: 0px;
+}
+
+body.modo-oscuro {
+  background-color: var(--color-fondo-oscuro);
+  color: var(--color-texto-oscuro);
+}
+
+body.modo-oscuro .chat {
+  background-color: var(--color-background-input);
+}
+
+body.modo-oscuro .terminal {
+  background-color: var(--color-background-input);
 }

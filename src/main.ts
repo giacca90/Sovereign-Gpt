@@ -1,22 +1,88 @@
+/* eslint-disable indent */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { app, BrowserWindow, screen, Menu, ipcMain } from 'electron';
-import * as path from 'path';
-import * as os from 'os';
-import { exec, spawn } from 'child_process';
-import * as sudoPrompt from 'sudo-prompt';
+import {exec, spawn} from 'child_process';
+import {app, BrowserWindow, ipcMain, Menu, screen} from 'electron';
 import * as http from 'http';
+import * as os from 'os';
+import * as path from 'path';
+import * as sudoPrompt from 'sudo-prompt';
 
 interface RequestData {
-  model: string;
-  prompt: string;
-  context: number[];
-  stream: boolean;
+	model: string;
+	prompt: string;
+	context: number[];
+	stream: boolean;
+}
+
+handleSquirrelEvent();
+
+function handleSquirrelEvent() {
+	if (process.argv.length === 1) {
+		return false;
+	}
+
+	const appFolder = path.resolve(process.execPath, '..');
+	console.log('appFolder: ' + appFolder);
+	const rootAtomFolder = path.resolve(appFolder, '..');
+	console.log('rootAtomFolder: ' + rootAtomFolder);
+	const updateDotExe = path.resolve(path.join(rootAtomFolder, 'Update.exe'));
+	console.log('updateDotExe: ' + updateDotExe);
+	const exeName = path.basename(process.execPath);
+	console.log('exeName: ' + exeName);
+
+	const spawn = function (command: string, args: any) {
+		let spawnedProcess;
+
+		try {
+			spawnedProcess = this.spawn(command, args, {detached: true});
+		} catch (error) {
+			console.error('Error: ' + error);
+		}
+
+		return spawnedProcess;
+	};
+
+	const spawnUpdate = function (args: string[]) {
+		return spawn(updateDotExe, args);
+	};
+
+	const squirrelEvent = process.argv[1];
+	switch (squirrelEvent) {
+		case '--squirrel-install':
+			return;
+		case '--squirrel-updated':
+			// Optionally do things such as:
+			// - Add your .exe to the PATH
+			// - Write to the registry for things like file associations and
+			//   explorer context menus
+
+			// Install desktop and start menu shortcuts
+			spawnUpdate(['--createShortcut', exeName]);
+
+			setTimeout(app.quit, 1000);
+			return true;
+		case '--squirrel-uninstall':
+			// Undo anything you did in the --squirrel-install and
+			// --squirrel-updated handlers
+			// Remove desktop and start menu shortcuts			spawnUpdate(['--removeShortcut', exeName]);
+
+			setTimeout(app.quit, 1000);
+			return true;
+
+		case '--squirrel-obsolete':
+			// This is called on the outgoing version of your app before
+			// we update to the new version - it's the opposite of
+			// --squirrel-updated
+
+			app.quit();
+			return true;
+	}
 }
 
 function createWindow() {
 	// Create the browser window.
-	const { width, height } = screen.getPrimaryDisplay().workAreaSize;
+	const {width, height} = screen.getPrimaryDisplay().workAreaSize;
 	const mainWindow = new BrowserWindow({
 		width: width,
 		height: height,
@@ -57,15 +123,15 @@ function createWindow() {
 				}
 				console.log('Resultado docker ps -a:');
 				console.log(stdout);
-				if(stdout.includes('ollama')) {
+				if (stdout.includes('ollama')) {
 					mainWindow.webContents.send('StatusStart', 2);
 					const spa = spawn('docker', ['start', 'ollama']);
 					spa.stdout.on('data', (data) => {
-						console.log('stdout: '+data.toString());
+						console.log('stdout: ' + data.toString());
 						sendMessage(data.toString());
 					});
 					spa.stderr.on('data', (data) => {
-						console.error('stderr: '+data.toString());
+						console.error('stderr: ' + data.toString());
 						sendMessage(data.toString());
 					});
 					spa.on('exit', (code) => {
@@ -99,29 +165,29 @@ function createWindow() {
 				}
 			});
 		});
-	});  
+	});
 
 	ipcMain.on('InstallDocker', (_event) => {
 		if (os.platform() === 'win32') {
 			exec('wsl --status', (error, stdout, stderr) => {
-				if(error) {
-					console.error('Error en ejecutar el comando '+error);
+				if (error) {
+					console.error('Error en ejecutar el comando ' + error);
 					const spa = spawn('wsl', ['--install']);
 					spa.stdout.on('data', (data) => {
-						console.log('stdout: '+data.toString());
+						console.log('stdout: ' + data.toString());
 						sendMessage(data.toString());
 					});
 					spa.stderr.on('data', (data) => {
-						console.error('stderr: '+data.toString());
+						console.error('stderr: ' + data.toString());
 						sendMessage(data.toString());
 					});
 					spa.on('exit', (code) => {
-						if(code === 0) {
+						if (code === 0) {
 							console.log('WSL instalado sin problemas!!');
 							sendMessage('Reinicia el Equipo y sigue las instrucciónes en la ventana emergente.');
 						} else {
-							console.error('Error en instalar WSL: '+code);
-							sendMessage('Error en instalar WSL: '+code);
+							console.error('Error en instalar WSL: ' + code);
+							sendMessage('Error en instalar WSL: ' + code);
 							return;
 						}
 					});
@@ -129,11 +195,11 @@ function createWindow() {
 				sendMessage(stdout);
 				const spa = spawn('curl', ['-L', 'https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe', '-o', `${process.env.USERPROFILE}\\DockerDesktopInstaller.exe`]);
 				spa.stdout.on('data', (data) => {
-					console.log('stdout: '+data.toString());
+					console.log('stdout: ' + data.toString());
 					sendMessage(data.toString());
 				});
 				spa.stderr.on('data', (data) => {
-					console.error('stderr: '+data.toString());
+					console.error('stderr: ' + data.toString());
 					sendMessage(data.toString());
 				});
 				spa.on('exit', (code) => {
@@ -141,75 +207,64 @@ function createWindow() {
 						console.log('Docker se ha descargado correctamente.');
 						sendMessage('Docker se ha descargado correctamente.');
 						// start /wait "" "%USERPROFILE%\DockerDesktopInstaller.exe"
-						const spa = spawn (`"${process.env.USERPROFILE}\\DockerDesktopInstaller.exe"`,{shell: true});
+						const spa = spawn(`"${process.env.USERPROFILE}\\DockerDesktopInstaller.exe"`, {shell: true});
 						spa.stdout.on('data', (data) => {
-							console.log('stdout: '+data.toString());
+							console.log('stdout: ' + data.toString());
 							sendMessage(data.toString());
 						});
 						spa.stderr.on('data', (data) => {
-							console.error('stderr: '+data.toString());
+							console.error('stderr: ' + data.toString());
 							sendMessage(data.toString());
 						});
-						spa.on('exit', (code:number) => {
-							if(code === 0) {
+						spa.on('exit', (code: number) => {
+							if (code === 0) {
 								sendMessage('Reiniciar el Equipo despues de Instalar Docker!!!');
-							}else{
-								console.error('Error en instalar Docker. '+code);
-								sendMessage('Error en instalar Docker. '+code);
+							} else {
+								console.error('Error en instalar Docker. ' + code);
+								sendMessage('Error en instalar Docker. ' + code);
 							}
 						});
 					} else {
-						console.error('Error en descargar Docker: '+code);
-						sendMessage('Error en descargar Docker: '+code);
+						console.error('Error en descargar Docker: ' + code);
+						sendMessage('Error en descargar Docker: ' + code);
 					}
-				});     
+				});
 			});
 		} else if (os.platform() === 'linux') {
 			sendMessage('Esparando permisos...');
-			sudoPrompt.exec(
-				'apt update; sudo apt install apt-transport-https ca-certificates curl software-properties-common',
-				{ name: 'SovereignGPT' },
-				(error, stdout, stderr) => {
-					if (error) {
-						console.error(
-							'Error en sudo apt update y instalación de dependencias: ' + error
-						);
-						sendMessage('Error en sudo apt update y instalación de dependencias: ' + error);
-					} else {
-						console.log('Respuesta a sudo apt update:\n' + stdout);
-						sendMessage('Esparando permisos...');
-						sudoPrompt.exec(
-							'curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo -y gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg; sudo echo "deb [signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu lunar stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null',
-							{ name: 'SovereignGPT' },
-							(error, stdout, stderr) => {
-								if (error) {
-									console.error(
-										'Error al configurar el repositorio de Docker: ' + error
-									);
-								} else {
-									console.log(
-										'Respuesta al configurar el repositorio de Docker:\n' +
-                      stdout
-									);
-									sendMessage('Esparando permisos...');
-									sudoPrompt.exec(
-										'apt update; sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin; sudo usermod -aG docker $USER',
-										{ name: 'SovereignGPT' },
-										(error, stdout, stderr) => {
-											if (error) {
-												console.error('Error al instalar Docker: ' + error);
-											} else {
-												console.log('Respuesta de instalar Docker:\n' + stdout);
-												mainWindow.webContents.send('StatusStart', 1);
-											}
+			sudoPrompt.exec('apt update; sudo apt install apt-transport-https ca-certificates curl software-properties-common', {name: 'SovereignGPT'}, (error, stdout, stderr) => {
+				if (error) {
+					console.error('Error en sudo apt update y instalación de dependencias: ' + error);
+					sendMessage('Error en sudo apt update y instalación de dependencias: ' + error);
+				} else {
+					console.log('Respuesta a sudo apt update:\n' + stdout);
+					sendMessage('Esparando permisos...');
+					sudoPrompt.exec(
+						'curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo -y gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg; sudo echo "deb [signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu lunar stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null',
+						{name: 'SovereignGPT'},
+						(error, stdout, stderr) => {
+							if (error) {
+								console.error('Error al configurar el repositorio de Docker: ' + error);
+							} else {
+								console.log('Respuesta al configurar el repositorio de Docker:\n' + stdout);
+								sendMessage('Esparando permisos...');
+								sudoPrompt.exec(
+									'apt update; sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin; sudo usermod -aG docker $USER',
+									{name: 'SovereignGPT'},
+									(error, stdout, stderr) => {
+										if (error) {
+											console.error('Error al instalar Docker: ' + error);
+										} else {
+											console.log('Respuesta de instalar Docker:\n' + stdout);
+											mainWindow.webContents.send('StatusStart', 1);
 										}
-									);
-								}
+									},
+								);
 							}
-						);
-					}
+						},
+					);
 				}
-			);
+			});
 		}
 	});
 
@@ -217,11 +272,11 @@ function createWindow() {
 	ipcMain.on('InstallOllama', (_event) => {
 		const spa = spawn('docker', ['run', '-d', '-v', 'ollama:/root/.ollama', '-p', '11434:11434', '--name', 'ollama', 'ollama/ollama']);
 		spa.stdout.on('data', (data) => {
-			console.log('stdout: '+data.toString());
+			console.log('stdout: ' + data.toString());
 			sendMessage(data.toString());
 		});
 		spa.stderr.on('data', (data) => {
-			console.error('stderr: '+data.toString());
+			console.error('stderr: ' + data.toString());
 			sendMessage(data.toString());
 		});
 		spa.on('exit', (code) => {
@@ -229,13 +284,13 @@ function createWindow() {
 				console.log('El contenedor Docker se configuó correctamente.');
 				sendMessage('El contenedor Docker se configuró correctamente.');
 				mainWindow.webContents.send('StatusStart', 2);
-				const spa = spawn('docker', ['exec', 'ollama', 'ollama', 'run', 'llama2']);
+				const spa = spawn('docker', ['exec', 'ollama', 'ollama', 'run', 'llama3']);
 				spa.stdout.on('data', (data) => {
-					console.log('stdout: '+data.toString());
+					console.log('stdout: ' + data.toString());
 					sendMessage(data.toString());
 				});
 				spa.stderr.on('data', (data) => {
-					console.error('stderr: '+data.toString());
+					console.error('stderr: ' + data.toString());
 					sendMessage(data.toString());
 				});
 				spa.on('exit', (code) => {
@@ -247,7 +302,7 @@ function createWindow() {
 						console.error(`Error al ejecutar el contenedor Docker: código de salida ${code}`);
 						sendMessage(`Error al ejecutar el contenedor Docker: código de salida ${code}`);
 					}
-				}); 
+				});
 			} else {
 				console.error(`Error al ejecutar el contenedor Docker: código de salida ${code}`);
 				sendMessage(`Error al ejecutar el contenedor Docker: código de salida ${code}`);
@@ -255,17 +310,16 @@ function createWindow() {
 		});
 	});
 
-	ipcMain.on('pregunta', (_event:any, pregunta:string) => {
-
+	ipcMain.on('pregunta', (_event: any, pregunta: string) => {
 		const apiUrl = 'http://localhost:11434/api/generate';
 		const requestData: RequestData = {
-			model: 'llama2',
+			model: 'llama3',
 			prompt: pregunta,
 			context: contexto,
 			stream: true,
 		};
 		// Convierte el objeto de datos en una cadena JSON
-		const dataString:string = JSON.stringify(requestData);
+		const dataString: string = JSON.stringify(requestData);
 
 		// Configura las opciones de la solicitud
 		const options: http.RequestOptions = {
@@ -282,16 +336,16 @@ function createWindow() {
 				console.log(chunk.toString());
 				mainWindow.webContents.send('respuesta', chunk.toString());
 				const jsonObject = JSON.parse(chunk.toString());
-				const fin:boolean = jsonObject.done;
-				if(fin) {
-					const context:number[] = jsonObject.context;
+				const fin: boolean = jsonObject.done;
+				if (fin) {
+					const context: number[] = jsonObject.context;
 					contexto = context;
 				}
 			});
-    
+
 			// Manejar la finalización de la solicitud
 			response.on('end', () => {
-				console.log('Solicitud completada: '+contexto);
+				console.log('Solicitud completada: ' + contexto);
 			});
 		});
 		// Enviar datos en el cuerpo de la solicitud
@@ -301,10 +355,9 @@ function createWindow() {
 		request.end();
 	});
 
-	function sendMessage(message:string) {
-		const mex:string = message.replace(/\033\[[0-9;?]*[a-zA-Z0-9]/g, '');
-		if(mex && mex.length > 0 && mex != ' ' && mex != '\n' && mex != '\f')
-			mainWindow.webContents.send('terminalMessage', mex);
+	function sendMessage(message: string) {
+		const mex: string = message.replace(/\xb1\[[0-9;?]*[a-zA-Z0-9]/g, '');
+		if (mex && mex.length > 0 && mex != ' ' && mex != '\n' && mex != '\f') mainWindow.webContents.send('terminalMessage', mex);
 	}
 }
 
